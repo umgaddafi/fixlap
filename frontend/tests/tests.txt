@@ -1,0 +1,41 @@
+# Tests
+
+## Test 1 - Submit a repair request successfully [sanity]
+Viewport: mobile
+Covers: repair request form, required fields, device selection, success confirmation
+Description: Verifies a customer can submit the primary repair-request workflow on a mobile viewport.
+Steps:
+1. Open the Book repair section
+2. Enter a name, phone number, select Laptop, and describe a broken screen
+3. Submit the request
+Expected: A visible confirmation states that the repair request was received and identifies the selected device.
+
+## Test 2 - Block an incomplete repair request
+Viewport: mobile
+Covers: required-field validation, invalid form submission guardrail
+Description: Verifies the form does not submit when required customer information is missing.
+Steps:
+1. Open the repair request form
+2. Leave the name, phone number, and issue fields empty
+3. Submit the form
+Expected: Browser validation prevents submission and no success confirmation is displayed.
+
+## Test 3 - Navigate from service discovery to repair booking
+Viewport: desktop
+Covers: service cards, internal navigation, booking CTA, responsive service presentation
+Description: Verifies a customer can discover repair categories and move directly to the request form.
+Steps:
+1. Open the Services section
+2. Select Get help on Laptop Repair
+3. Observe the repair request section
+Expected: The page scrolls to the repair request form and the service cards remain readable and usable.
+
+## Test 4 - Use the mobile navigation menu
+Viewport: mobile
+Covers: mobile navigation toggle, section navigation, mobile-first interaction
+Description: Verifies the compact navigation opens and its links navigate to the intended sections.
+Steps:
+1. Tap the menu button
+2. Tap Services
+3. Open the menu again and tap Book repair
+Expected: The menu opens and closes correctly, and each selected link moves to its corresponding section.

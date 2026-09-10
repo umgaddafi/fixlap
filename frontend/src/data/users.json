@@ -1,0 +1,9 @@
+{
+  "staff": [
+    { "email": "repairer@fixlab.com", "password": "password", "role": "repairer", "name": "Jordan Malik" },
+    { "email": "admin@fixlab.com", "password": "password", "role": "admin", "name": "Alex Doe" }
+  ],
+  "clients": [
+    { "email": "client@fixlab.com", "password": "password", "name": "Sarah Johnson", "referralCode": "SARAH200" }
+  ]
+}
