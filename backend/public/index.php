@@ -5,22 +5,41 @@ use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
 
-// Determine if the application is in maintenance mode...
-if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php')) {
-    require $maintenance;
+// Direct diagnostic ping
+if (isset($_GET['api_ping'])) {
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'ok', 'php' => PHP_VERSION, 'time' => date('Y-m-d H:i:s')]);
+    exit;
 }
 
-// Register the Composer autoloader...
-require __DIR__.'/../vendor/autoload.php';
+try {
+    // Determine if the application is in maintenance mode...
+    if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php')) {
+        require $maintenance;
+    }
 
-// Bootstrap Laravel and handle the request...
-/** @var Application $app */
-$app = require_once __DIR__.'/../bootstrap/app.php';
+    // Register the Composer autoloader...
+    require __DIR__.'/../vendor/autoload.php';
 
-// Support subfolder deployments (e.g. /fixlap/api in XAMPP/LAMPP)
-if (isset($_SERVER['REQUEST_URI']) && str_starts_with($_SERVER['REQUEST_URI'], '/fixlap/api')) {
-    $_SERVER['REQUEST_URI'] = substr($_SERVER['REQUEST_URI'], 7);
-    $_SERVER['SCRIPT_NAME'] = '/index.php';
+    // Bootstrap Laravel and handle the request...
+    /** @var Application $app */
+    $app = require_once __DIR__.'/../bootstrap/app.php';
+
+    // Support subfolder deployments (e.g. /fixlap/api in XAMPP/LAMPP)
+    if (isset($_SERVER['REQUEST_URI']) && str_starts_with($_SERVER['REQUEST_URI'], '/fixlap/api')) {
+        $_SERVER['REQUEST_URI'] = substr($_SERVER['REQUEST_URI'], 7);
+        $_SERVER['SCRIPT_NAME'] = '/index.php';
+    }
+
+    $app->handleRequest(Request::capture());
+} catch (\Throwable $e) {
+    header('Content-Type: application/json');
+    http_response_code(500);
+    echo json_encode([
+        'status' => 'error',
+        'message' => $e->getMessage(),
+        'file' => basename($e->getFile()),
+        'line' => $e->getLine(),
+    ]);
+    exit;
 }
-
-$app->handleRequest(Request::capture());
