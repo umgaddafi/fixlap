@@ -32,7 +32,7 @@ fixlap/
 │   │   │   └── landing/           # Responsive Marketing Website
 │   │   ├── App.tsx                # History API SPA Routing
 │   │   └── main.tsx               # Application Entrypoint
-│   ├── vite.config.ts             # Vite config with /api proxy to Laravel (127.0.0.1:8000)
+│   ├── vite.config.ts             # Vite config with /api proxy to Laravel (127.0.0.1:80)
 │   └── package.json               # Frontend dependencies & scripts
 │
 ├── package.json                   # Root orchestrator scripts (run dev, backend, dev:all)
@@ -95,8 +95,8 @@ From `/opt/lampp/htdocs/fixlap`:
 npm run dev:all
 
 # Or run separately in two terminals:
-npm run backend    # Starts Laravel API on http://127.0.0.1:8000
-npm run dev        # Starts Vite Frontend on http://localhost:5174
+npm run backend    # Starts Laravel API on http://127.0.0.1 (port 80)
+npm run dev        # Starts Vite Frontend on http://localhost:5173
 ```
 
 ### Option B: Running Individually
@@ -104,9 +104,9 @@ npm run dev        # Starts Vite Frontend on http://localhost:5174
 #### 1. Backend (Laravel API)
 ```bash
 cd /opt/lampp/htdocs/fixlap/backend
-php artisan serve --host=0.0.0.0 --port=8000
+php artisan serve --host=0.0.0.0 --port=80
 ```
-API endpoints will be live on all network interfaces at `http://0.0.0.0:8000/api` (e.g., `http://192.168.1.190:8000/api` or `http://localhost:8000/api`).
+API endpoints will be live on all network interfaces at `http://0.0.0.0/api` (e.g., `http://192.168.1.190/api` or `http://localhost/api`).
 
 #### 2. Frontend (React 19 + Vite)
 ```bash
@@ -117,7 +117,7 @@ Or from root:
 ```bash
 npm run dev
 ```
-Access the application locally at `http://localhost:5174` or across the local network/devices at `http://<your-ip>:5174` (e.g. `http://192.168.1.190:5174`).
+Access the application locally at `http://localhost:5173` or across the local network/devices at `http://<your-ip>:5173` (e.g. `http://192.168.1.190:5173`).
 
 ---
 
@@ -129,7 +129,7 @@ FixLab is built to support dynamic network environments where users, staff, and 
    - Both the Laravel backend and Vite frontend listen on `0.0.0.0` instead of `127.0.0.1`, exposing them to localhost, WiFi/Ethernet LAN IPs (e.g. `192.168.1.190`), and external network interfaces.
 2. **Dynamic Frontend API Base URL**:
    - `frontend/src/api/client.ts` includes `getApiBaseUrl()` and `resolveApiUrl()`.
-   - In browser environments, it dynamically detects `window.location.hostname` (e.g., `${window.location.protocol}//${window.location.hostname}:8000`) so any client visiting `http://<any-ip>:5174` automatically routes API traffic to the corresponding backend IP on port 8000.
+   - In browser environments, it dynamically detects `window.location.hostname` (e.g., `${window.location.protocol}//${window.location.hostname}`) so any client visiting `http://<any-ip>:5173` automatically routes API traffic to the corresponding backend IP on port 80.
    - An optional `VITE_API_URL` environment variable is supported to override with a custom domain or reverse proxy if needed.
 3. **Dynamic Cross-Origin Resource Sharing (CORS)**:
    - In `backend/config/cors.php`, `allowed_origins_patterns` is set to `['#.*#']` and `supports_credentials` is set to `true`.

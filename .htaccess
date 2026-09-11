@@ -2,7 +2,6 @@
     RewriteEngine On
 
     # Route /api/ requests to the Laravel Backend
-    RewriteCond %{REQUEST_URI} ^/api/ [NC]
     RewriteRule ^api/(.*)$ backend/public/index.php [L,QSA]
 
     # Route all other requests to React's index.html (for React Router / SPA)

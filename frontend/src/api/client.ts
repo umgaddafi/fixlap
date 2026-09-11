@@ -48,8 +48,8 @@ export function setStoredUser(user: any, remember = true) {
  * Allows multiple users, devices, and external IPs to communicate with the FixLab backend.
  * 1. Checks VITE_API_URL if explicitly configured.
  * 2. If running in a browser:
- *    - If accessed on port 8000 (direct Laravel) or standard 80/443 reverse proxy, uses relative '/api'
- *    - Otherwise, dynamically targets `${protocol}//${hostname}:8000` so any LAN IP, WiFi IP, or remote IP works cross-origin seamlessly without hardcoded localhost.
+ *    - If accessed on default HTTP/HTTPS port 80/443 or unified reverse proxy, uses relative '/api'
+ *    - Otherwise (such as Vite dev server on port 5173), dynamically targets `${protocol}//${hostname}` on default port 80
  */
 export function getApiBaseUrl(): string {
   const envUrl = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
@@ -60,13 +60,13 @@ export function getApiBaseUrl(): string {
 
   if (typeof window !== 'undefined' && window.location) {
     const { protocol, hostname, port } = window.location;
-    // When served on backend port directly or behind unified reverse proxy
-    if (port === '8000') {
+    // When served on default HTTP/HTTPS ports or behind unified reverse proxy
+    if (!port || port === '80' || port === '443') {
       return '';
     }
-    // Dynamic IP detection: use current browser hostname and backend port 8000
+    // Dynamic IP detection: use current browser hostname on default backend port 80
     // This allows devices on LAN (e.g. 192.168.1.190), custom IPs, or domains to access the API cross-origin
-    return `${protocol}//${hostname}:8000`;
+    return `${protocol}//${hostname}`;
   }
 
   return '';
