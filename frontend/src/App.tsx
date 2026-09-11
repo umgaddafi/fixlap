@@ -80,8 +80,8 @@ export default function App() {
     window.scrollTo(0, 0);
   };
 
-  const login = (role: Role, remember: boolean) => {
-    setStaffSession(saveStaffSession(role, remember));
+  const login = (role: Role, remember: boolean, email?: string) => {
+    setStaffSession(saveStaffSession(role, remember, email));
     navigate(role);
   };
 

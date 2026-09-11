@@ -1,4 +1,3 @@
-import users from '../../data/users.json';
 import type { Role } from '../../types';
 
 const STAFF_SESSION_KEY = 'fixlab.staff-session.v1';
@@ -12,12 +11,11 @@ let memorySession: StaffSession | null = null;
 let memoryOnly = false;
 
 function parseSession(raw: string | null): StaffSession | null {
-  let saved: unknown;
+  let saved: any;
   try { saved = JSON.parse(raw ?? 'null'); } catch { return null; }
   if (!saved || typeof saved !== 'object' || !('email' in saved) || !('role' in saved)) return null;
-  const user = users.staff.find(user => user.email === saved.email && user.role === saved.role);
-  if (!user || (user.role !== 'repairer' && user.role !== 'admin')) return null;
-  return { email: user.email, role: user.role };
+  if (saved.role !== 'repairer' && saved.role !== 'admin') return null;
+  return { email: String(saved.email), role: saved.role };
 }
 
 export function readStaffSession(): StaffSession | null {
@@ -45,10 +43,12 @@ export function clearStaffSession() {
   try { window.localStorage.removeItem(STAFF_SESSION_KEY); } catch { /* Storage may be blocked. */ }
 }
 
-export function saveStaffSession(role: Role, remember: boolean): StaffSession {
+export function saveStaffSession(role: Role, remember: boolean, email?: string): StaffSession {
   clearStaffSession();
-  const user = users.staff.find(user => user.role === role)!;
-  const session = { email: user.email, role };
+  const session: StaffSession = {
+    email: email || (role === 'admin' ? 'admin@fixlap.com' : 'repairer@fixlap.com'),
+    role,
+  };
   memorySession = session;
   try {
     const storage = remember ? window.localStorage : window.sessionStorage;
@@ -56,3 +56,4 @@ export function saveStaffSession(role: Role, remember: boolean): StaffSession {
   } catch { memoryOnly = true; }
   return session;
 }
+

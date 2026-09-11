@@ -26,6 +26,7 @@ export default function Dashboard({ role, onLogout }: { role: Role; onLogout: ()
   const [active, setActive] = useState('Overview');
   const [open, setOpen] = useState(false);
   const [workspace, setWorkspace] = useState<Workspace>(readWorkspace);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('All statuses');
   const [modal, setModal] = useState<'new' | 'help' | null>(null);
@@ -57,21 +58,25 @@ export default function Dashboard({ role, onLogout }: { role: Role; onLogout: ()
     const fetchLiveWorkspace = async () => {
       try {
         const [jobs, technicians, parts, notifs] = await Promise.all([
-          api.repairs.list(),
-          api.technicians.list(),
-          api.inventory.list(),
+          api.repairs.list().catch(() => []),
+          api.technicians.list().catch(() => []),
+          api.inventory.list().catch(() => []),
           api.notifications.list().catch(() => null),
         ]);
         if (mounted) {
-          if (Array.isArray(jobs) && Array.isArray(technicians) && Array.isArray(parts)) {
-            setWorkspace({ jobs, technicians, parts });
-          }
+          setWorkspace({
+            jobs: Array.isArray(jobs) ? jobs : [],
+            technicians: Array.isArray(technicians) ? technicians : [],
+            parts: Array.isArray(parts) ? parts : [],
+          });
           if (notifs?.items && Array.isArray(notifs.items)) {
             setChatNotifications(notifs.items);
           }
         }
       } catch {
-        // Fallback to local storage if API is not yet running
+        // Failed to fetch live workspace
+      } finally {
+        if (mounted) setLoading(false);
       }
     };
     fetchLiveWorkspace();

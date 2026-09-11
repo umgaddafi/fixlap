@@ -5,6 +5,9 @@ use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
 
+// Load essential polyfills for hosting environments missing mbstring regex
+require_once __DIR__.'/../bootstrap/polyfills.php';
+
 // Direct diagnostic ping
 if (isset($_GET['api_ping'])) {
     header('Content-Type: application/json');

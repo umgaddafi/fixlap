@@ -38,33 +38,10 @@ export const isOpen = (job: Job) => job.status !== 'Completed';
 export const isOverdue = (job: Job) => isOpen(job) && job.status !== 'Ready for pickup' && job.dueDate < dateKey();
 
 export function initialWorkspace(): Workspace {
-  const createdAt = new Date().toISOString();
-  const base = { category: 'Phone' as const, priority: 'Normal' as const, technicianId: currentTechnicianId, createdAt, notes: [] };
   return {
-    technicians: [
-      { id: currentTechnicianId, name: 'Jordan Malik', email: 'repairer@fixlab.com', phone: '080 3456 7891', specialty: 'Phones & tablets', available: true },
-      { id: 'tech-tomi', name: 'Tomi Adeyemi', email: 'tomi@example.com', phone: '080 4567 8902', specialty: 'Laptops & diagnostics', available: true },
-      { id: 'tech-ada', name: 'Ada Eze', email: 'ada@example.com', phone: '080 5678 9013', specialty: 'Board repairs', available: false },
-    ],
-    jobs: [
-      { ...base, id: 'FL-1048', customer: 'Amaka Okafor', email: 'amaka@example.com', phone: '080 2345 6789', device: 'iPhone 13 Pro', issue: 'Cracked screen. Replace display and check touch response.', status: 'In progress', priority: 'High', dueDate: offsetDate(0), time: '10:30', estimate: 45000 },
-      { ...base, id: 'FL-1047', customer: 'David Mensah', email: 'david@example.com', phone: '080 3456 7890', device: 'MacBook Air M2', category: 'Laptop', issue: 'Battery replacement and charging test.', status: 'Ready for pickup', technicianId: 'tech-tomi', dueDate: offsetDate(0), time: '12:00', estimate: 85000 },
-      { ...base, id: 'FL-1046', customer: 'Zainab Bello', email: 'zainab@example.com', phone: '080 4567 8901', device: 'Samsung Galaxy S23', issue: 'Loose charging port. Waiting for a replacement USB-C assembly.', status: 'Awaiting parts', priority: 'Urgent', dueDate: offsetDate(-1), time: '14:00', estimate: 28000 },
-      { ...base, id: 'FL-1045', customer: 'Emeka Nwosu', email: 'emeka@example.com', phone: '080 5678 9012', device: 'iPad Pro 11-inch', category: 'Tablet', issue: 'Display flickers after a drop. Run diagnostics.', status: 'New', dueDate: offsetDate(0), time: '15:30', estimate: 60000 },
-      { ...base, id: 'FL-1044', customer: 'Sarah Johnson', email: 'client@fixlab.com', phone: '080 1234 5678', device: 'Dell XPS 13', category: 'Laptop', issue: 'Keyboard replacement; several keys are unresponsive.', status: 'In progress', technicianId: 'tech-tomi', dueDate: offsetDate(1), time: '11:00', estimate: 38000 },
-      { ...base, id: 'FL-1043', customer: 'Kemi Adebayo', email: 'kemi@example.com', phone: '080 6789 0123', device: 'iPhone 12', issue: 'Replace battery and complete final quality checks.', status: 'Ready for pickup', dueDate: offsetDate(0), time: '16:00', estimate: 32000 },
-      { ...base, id: 'FL-1042', customer: 'David Mensah', email: 'david@example.com', phone: '080 3456 7890', device: 'HP Pavilion 15', category: 'Laptop', issue: 'Device will not power on. Assess mainboard.', status: 'New', technicianId: '', priority: 'High', dueDate: offsetDate(2), time: '09:00', estimate: 0 },
-      { ...base, id: 'FL-1041', customer: 'Sarah Johnson', email: 'client@fixlab.com', phone: '080 1234 5678', device: 'iPhone 11', issue: 'Speaker replacement completed; device collected.', status: 'Completed', dueDate: offsetDate(-2), time: '13:00', estimate: 18000 },
-      { ...base, id: 'FL-1040', customer: 'Amaka Okafor', email: 'amaka@example.com', phone: '080 2345 6789', device: 'Lenovo ThinkPad', category: 'Laptop', issue: 'SSD upgrade and operating system setup completed.', status: 'Completed', technicianId: 'tech-tomi', dueDate: offsetDate(-3), time: '10:00', estimate: 52000 },
-    ],
-    parts: [
-      { id: 'part-1', name: 'iPhone 13 Pro display', category: 'Screens', sku: 'SCR-IP13P', stock: 4, minimum: 3, price: 32000 },
-      { id: 'part-2', name: 'Samsung S23 USB-C port', category: 'Charging', sku: 'CHG-S23', stock: 0, minimum: 3, price: 12000 },
-      { id: 'part-3', name: 'MacBook Air M2 battery', category: 'Batteries', sku: 'BAT-MBA2', stock: 2, minimum: 4, price: 56000 },
-      { id: 'part-4', name: 'iPhone 12 battery', category: 'Batteries', sku: 'BAT-IP12', stock: 8, minimum: 3, price: 15000 },
-      { id: 'part-5', name: 'Dell XPS 13 keyboard', category: 'Keyboards', sku: 'KEY-XPS13', stock: 5, minimum: 2, price: 22000 },
-      { id: 'part-6', name: '1 TB NVMe SSD', category: 'Storage', sku: 'SSD-1TB', stock: 6, minimum: 3, price: 48000 },
-    ],
+    technicians: [],
+    jobs: [],
+    parts: [],
   };
 }
 
@@ -72,7 +49,13 @@ export function initialWorkspace(): Workspace {
 export function readWorkspace(): Workspace {
   try {
     const raw: unknown = JSON.parse(localStorage.getItem(workspaceKey) || 'null');
-    if (validWorkspace(raw)) return raw;
+    if (validWorkspace(raw)) {
+      // Discard legacy mock data from demo phase
+      const hasMock = raw.jobs.some(j => j.customer === 'Amaka Okafor' || j.id === 'FL-1048');
+      if (!hasMock) {
+        return raw;
+      }
+    }
   } catch { /* A fresh workspace also works when browser storage is unavailable. */ }
   return initialWorkspace();
 }

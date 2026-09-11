@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import './client-portal.css';
 import { exportInvoicePDF, exportWarrantyPDF, exportDiagnosticPDF } from './pdfExport';
-import { api } from '../../api/client';
+import { api, getStoredUser } from '../../api/client';
 import BrandLogo from '../../components/BrandLogo';
 
 interface RepairItem {
@@ -68,61 +68,20 @@ export default function ClientDashboard({ onLogout }: { onLogout: () => void }) 
   const [toast, setToast] = useState<string | null>(null);
 
   // User profile state
+  const storedUser = getStoredUser();
   const [profile, setProfile] = useState({
-    name: 'Sarah Johnson',
-    email: 'sarah@example.com',
-    phone: '080 1234 5678',
-    avatarUrl: '',
+    name: storedUser?.name || '',
+    email: storedUser?.email || '',
+    phone: storedUser?.phone || '',
+    avatarUrl: storedUser?.avatar_url || '',
     notifySms: true,
     notifyEmail: true,
     notifyWhatsapp: true,
   });
 
-  // Client Repairs state
-  const [repairs, setRepairs] = useState<RepairItem[]>([
-    {
-      id: 'FL-1048',
-      device: 'iPhone 13 Pro',
-      category: 'Phone',
-      issue: 'Cracked OLED screen after drop. Touch digitizer unresponsive on lower quadrant.',
-      status: 'Awaiting payment',
-      stageIndex: 2,
-      estimate: 45000,
-      paid: false,
-      dueDate: '2026-09-12',
-      dropoffDate: '2026-09-08',
-      technician: 'Jordan Malik',
-      notes: 'Initial diagnostics complete. Original OLED replacement panel allocated. Awaiting payment confirmation to proceed.',
-    },
-    {
-      id: 'FL-1042',
-      device: 'Dell XPS 13',
-      category: 'Laptop',
-      issue: 'Spill on keyboard. Spacebar and row 3 sticky keys.',
-      status: 'In progress',
-      stageIndex: 4,
-      estimate: 28000,
-      paid: true,
-      dueDate: '2026-09-15',
-      dropoffDate: '2026-09-05',
-      technician: 'Tomi Adeyemi',
-      notes: 'Internal board cleaned. Replacement backlit keyboard module en route from certified supplier.',
-    },
-    {
-      id: 'FL-1039',
-      device: 'MacBook Air M1',
-      category: 'Laptop',
-      issue: 'Battery health degraded (62%). Frequent sudden shutdowns.',
-      status: 'Collected',
-      stageIndex: 5,
-      estimate: 45000,
-      paid: true,
-      dueDate: '2026-09-04',
-      dropoffDate: '2026-09-01',
-      technician: 'Jordan Malik',
-      notes: 'New OEM battery installed and calibrated. Passed all 40-point power draw benchmarks.',
-    },
-  ]);
+  // Client Repairs state - loads directly from live MySQL API
+  const [repairs, setRepairs] = useState<RepairItem[]>([]);
+  const [loadingRepairs, setLoadingRepairs] = useState(true);
 
   // Selected repair for detail modal
   const [selectedRepair, setSelectedRepair] = useState<RepairItem | null>(null);
@@ -133,35 +92,23 @@ export default function ClientDashboard({ onLogout }: { onLogout: () => void }) 
     repair?: RepairItem;
   } | null>(null);
 
-  // Chat Threads state
-  const [threads, setThreads] = useState<Thread[]>([
-    {
-      id: 'workshop',
-      title: 'Kendat FixLap Workshop',
-      subtitle: 'Repair updates for #FL-1048',
-      avatar: 'JM',
-      unread: true,
-      messages: [
-        { id: 'm1', from: 'staff', author: 'Jordan Malik (Senior Technician)', text: 'Hello Sarah! We have completed diagnostics on your iPhone 13 Pro (#FL-1048).', time: '10:15 AM' },
-        { id: 'm2', from: 'staff', author: 'Jordan Malik (Senior Technician)', text: 'The display panel replacement is ready. Once payment of ₦45,000 is completed, our bench team will install and test it today.', time: '10:32 AM' },
-      ],
-    },
-    {
-      id: 'support',
-      title: 'Kendat FixLap Support Desk',
-      subtitle: 'General inquiries & pickups',
-      avatar: 'KF',
-      unread: true,
-      messages: [
-        { id: 's1', from: 'staff', author: 'Amaka (Support)', text: 'Welcome to Kendat FixLap, Sarah! Let us know if you ever need dispatch pickup for any device.', time: 'Yesterday' },
-      ],
-    },
-  ]);
+  // Chat Threads state - loads directly from live messaging API
+  const [threads, setThreads] = useState<Thread[]>([]);
 
   // Active chat thread
-  const [activeThreadId, setActiveThreadId] = useState('workshop');
+  const [activeThreadId, setActiveThreadId] = useState('');
 
-  // Referral sent state
+  // Referral state
+  const [referralCode, setReferralCode] = useState(storedUser?.referral_code || '');
+  const [referralStats, setReferralStats] = useState<{
+    totalEarnings: number;
+    successfulInvites: number;
+    referrals: { id: number; refereeName: string; status: string; reward: number; date: string }[];
+  }>({
+    totalEarnings: 0,
+    successfulInvites: 0,
+    referrals: [],
+  });
   const [referralCopied, setReferralCopied] = useState(false);
   const [showRedeemModal, setShowRedeemModal] = useState(false);
   const [paystackKey, setPaystackKey] = useState('');
@@ -236,13 +183,17 @@ export default function ClientDashboard({ onLogout }: { onLogout: () => void }) 
               name: userRes.user.name || prev.name,
               email: userRes.user.email || prev.email,
               phone: userRes.user.phone || prev.phone,
+              avatarUrl: userRes.user.avatar_url || prev.avatarUrl,
             }));
           }
-          if (repairsData && Array.isArray(repairsData) && repairsData.length > 0) {
+          if (Array.isArray(repairsData)) {
             setRepairs(repairsData);
           }
-          if (threadsData && Array.isArray(threadsData) && threadsData.length > 0) {
+          if (Array.isArray(threadsData)) {
             setThreads(threadsData);
+            if (threadsData.length > 0) {
+              setActiveThreadId(threadsData[0].id);
+            }
           }
           if (notifsData?.items && Array.isArray(notifsData.items)) {
             setClientNotifications(notifsData.items);
@@ -250,12 +201,21 @@ export default function ClientDashboard({ onLogout }: { onLogout: () => void }) 
           if (refData?.referralCode) {
             setReferralCode(refData.referralCode);
           }
+          if (refData) {
+            setReferralStats({
+              totalEarnings: Number(refData.totalEarnings) || 0,
+              successfulInvites: Number(refData.successfulInvites) || 0,
+              referrals: Array.isArray(refData.referrals) ? refData.referrals : [],
+            });
+          }
           if (payConfig?.publicKey) {
             setPaystackKey(payConfig.publicKey);
           }
         }
       } catch {
-        // graceful fallback to seeded initial state
+        // Failed to load live data
+      } finally {
+        if (mounted) setLoadingRepairs(false);
       }
     };
     loadLiveClientData();
@@ -338,8 +298,13 @@ export default function ClientDashboard({ onLogout }: { onLogout: () => void }) 
     }
   };
 
-  const startPayment = async (repairId = 'FL-1048', amount = 45000) => {
-    const targetRepair = repairs.find(r => r.id === repairId) || repairs[0];
+  const startPayment = async (repairId?: string, amount?: number) => {
+    const targetRepair = repairId ? repairs.find(r => r.id === repairId) : (repairs[0] || null);
+    if (!targetRepair) {
+      showToast('No active repair found to process payment for.');
+      return;
+    }
+    const payAmount = amount ?? targetRepair.estimate;
     let key = paystackKey || (import.meta.env.VITE_PAYSTACK_PUBLIC_KEY as string | undefined);
 
     // If key not yet in state, fetch dynamically from backend config
@@ -368,8 +333,8 @@ export default function ClientDashboard({ onLogout }: { onLogout: () => void }) 
 
       window.PaystackPop.setup({
         key,
-        email: profile.email || 'client@fixlab.com',
-        amount: Math.round(amount * 100),
+        email: profile.email || 'client@fixlap.com',
+        amount: Math.round(payAmount * 100),
         currency: 'NGN',
         ref: `FIX-${targetRepair.id}-${Date.now()}`,
         metadata: {
@@ -378,7 +343,7 @@ export default function ClientDashboard({ onLogout }: { onLogout: () => void }) 
           customerName: profile.name,
         },
         callback: (resp) => {
-          handlePaymentSuccess(targetRepair.id, amount, resp.reference);
+          handlePaymentSuccess(targetRepair.id, payAmount, resp.reference);
         },
         onClose: () => undefined,
       }).openIframe();
@@ -397,7 +362,7 @@ export default function ClientDashboard({ onLogout }: { onLogout: () => void }) 
     document.body.appendChild(script);
   };
 
-  const handlePaymentSuccess = async (repairId: string, amount = 45000, reference?: string) => {
+  const handlePaymentSuccess = async (repairId: string, amount: number, reference?: string) => {
     setRepairs(prev => prev.map(r => r.id === repairId ? { ...r, paid: true, status: 'In progress', stageIndex: 4 } : r));
     showToast(`Payment of ₦${amount.toLocaleString()} received for repair #${repairId}!`);
     try {
@@ -410,7 +375,7 @@ export default function ClientDashboard({ onLogout }: { onLogout: () => void }) 
   const activeRepairsCount = repairs.filter(r => r.status !== 'Collected').length;
   const totalRepairsCount = repairs.length;
 
-  const currentActiveRepair = repairs.find(r => r.id === 'FL-1048') || repairs[0];
+  const currentActiveRepair = repairs.find(r => r.status !== 'Collected' && r.status !== 'Completed') || repairs[0] || null;
 
   return (
     <div className={`client-app ${theme}`}>
@@ -710,14 +675,14 @@ export default function ClientDashboard({ onLogout }: { onLogout: () => void }) 
         <main className="client-content">
           {active === 'Overview' && (
             <OverviewSection
-              profileName={profile.name}
+              profileName={profile.name || 'Client'}
               repairs={repairs}
               activeRepair={currentActiveRepair}
               activeCount={activeRepairsCount}
               totalCount={totalRepairsCount}
               onNew={() => selectPage('New repair request')}
               onViewAll={() => selectPage('My repairs')}
-              onPay={() => startPayment(currentActiveRepair.id, currentActiveRepair.estimate)}
+              onPay={() => currentActiveRepair && startPayment(currentActiveRepair.id, currentActiveRepair.estimate)}
               onSelectRepair={setSelectedRepair}
             />
           )}
@@ -756,7 +721,7 @@ export default function ClientDashboard({ onLogout }: { onLogout: () => void }) 
                 const newMsg: MessageItem = {
                   id: `msg-${Date.now()}`,
                   from: 'client',
-                  author: profile.name,
+                  author: profile.name || 'Client',
                   text,
                   time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 };
@@ -767,7 +732,7 @@ export default function ClientDashboard({ onLogout }: { onLogout: () => void }) 
                   return t;
                 }));
 
-                // Synchronize with Laravel API: sends email to technician and flags message
+                // Synchronize with Laravel API
                 try {
                   if (threadId.startsWith('repair-') || !isNaN(Number(threadId))) {
                     const cleanRepairId = threadId.replace('repair-', '');
@@ -776,25 +741,7 @@ export default function ClientDashboard({ onLogout }: { onLogout: () => void }) 
                     await api.messages.send(threadId, text);
                   }
                 } catch {
-                  // Auto-reply fallback simulation if working offline
-                  setTimeout(() => {
-                    const replyText = threadId === 'workshop'
-                      ? "Thank you Sarah. Jordan has noted this and is currently preparing your device. We'll send an update once the bench test finishes."
-                      : 'Hello Sarah, your message has reached our support desk. An agent is on standby if you need courier assistance.';
-                    const replyMsg: MessageItem = {
-                      id: `msg-reply-${Date.now()}`,
-                      from: 'staff',
-                      author: threadId === 'workshop' ? 'Jordan Malik (FixLab)' : 'Amaka (Support)',
-                      text: replyText,
-                      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                    };
-                    setThreads(prev => prev.map(t => {
-                      if (t.id === threadId) {
-                        return { ...t, messages: [...t.messages, replyMsg] };
-                      }
-                      return t;
-                    }));
-                  }, 1200);
+                  showToast('Message could not be synced to server.');
                 }
               }}
             />
@@ -802,6 +749,10 @@ export default function ClientDashboard({ onLogout }: { onLogout: () => void }) 
 
           {active === 'Referrals & rewards' && (
             <ReferralSection
+              referralCode={referralCode || profile.name.toLowerCase().replace(/[^a-z0-9]/g, '') || 'invite'}
+              totalEarnings={referralStats.totalEarnings}
+              successfulInvites={referralStats.successfulInvites}
+              referrals={referralStats.referrals}
               copied={referralCopied}
               onCopy={() => {
                 setReferralCopied(true);
@@ -867,47 +818,49 @@ export default function ClientDashboard({ onLogout }: { onLogout: () => void }) 
       )}
 
       {/* Document View Modal */}
-      {activeDoc && (
-        <DocumentModal
-          docType={activeDoc.type}
-          repair={activeDoc.repair || repairs.find(r => r.id === 'FL-1039') || repairs[0]}
-          clientName={profile.name}
-          onClose={() => setActiveDoc(null)}
-          onPrint={() => {
-            window.print();
-          }}
-          onDownload={() => {
-            const target = activeDoc.repair || repairs.find(r => r.id === 'FL-1039') || repairs[0];
-            if (activeDoc.type === 'invoice') {
-              exportInvoicePDF({
-                repairId: target.id,
-                device: target.device,
-                clientName: profile.name,
-                dateIssued: target.dropoffDate,
-                paid: target.paid,
-                amount: target.estimate,
-              });
-              showToast(`Invoice-${target.id}.pdf downloaded successfully!`);
-            } else if (activeDoc.type === 'warranty') {
-              exportWarrantyPDF({
-                repairId: target.id,
-                device: target.device,
-                clientName: profile.name,
-                dateIssued: target.dropoffDate,
-              });
-              showToast(`Warranty-Certificate-${target.id}.pdf downloaded!`);
-            } else {
-              exportDiagnosticPDF({
-                repairId: target.id,
-                device: target.device,
-                clientName: profile.name,
-                technician: target.technician,
-              });
-              showToast(`Diagnostic-Report-${target.id}.pdf downloaded!`);
-            }
-          }}
-        />
-      )}
+      {activeDoc && (activeDoc.repair || repairs[0]) && (() => {
+        const target = activeDoc.repair || repairs[0];
+        return (
+          <DocumentModal
+            docType={activeDoc.type}
+            repair={target}
+            clientName={profile.name || 'Client'}
+            onClose={() => setActiveDoc(null)}
+            onPrint={() => {
+              window.print();
+            }}
+            onDownload={() => {
+              if (activeDoc.type === 'invoice') {
+                exportInvoicePDF({
+                  repairId: target.id,
+                  device: target.device,
+                  clientName: profile.name || 'Client',
+                  dateIssued: target.dropoffDate,
+                  paid: target.paid,
+                  amount: target.estimate,
+                });
+                showToast(`Invoice-${target.id}.pdf downloaded successfully!`);
+              } else if (activeDoc.type === 'warranty') {
+                exportWarrantyPDF({
+                  repairId: target.id,
+                  device: target.device,
+                  clientName: profile.name || 'Client',
+                  dateIssued: target.dropoffDate,
+                });
+                showToast(`Warranty-Certificate-${target.id}.pdf downloaded!`);
+              } else {
+                exportDiagnosticPDF({
+                  repairId: target.id,
+                  device: target.device,
+                  clientName: profile.name || 'Client',
+                  technician: target.technician,
+                });
+                showToast(`Diagnostic-Report-${target.id}.pdf downloaded!`);
+              }
+            }}
+          />
+        );
+      })()}
 
       {/* Referral Redeem Modal */}
       {showRedeemModal && (
@@ -919,32 +872,38 @@ export default function ClientDashboard({ onLogout }: { onLogout: () => void }) 
             </div>
             <div className="client-modal-body">
               <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.6 }}>
-                Your current rewards balance is <strong style={{ color: '#08a4b3', fontSize: 15 }}>₦1,200</strong>.
+                Your current rewards balance is <strong style={{ color: '#08a4b3', fontSize: 15 }}>₦{referralStats.totalEarnings.toLocaleString()}</strong>.
               </p>
-              <div style={{ display: 'grid', gap: 10, margin: '18px 0' }}>
-                <button
-                  className="client-repair-card"
-                  style={{ cursor: 'pointer', textAlign: 'left', border: '1px solid #73e2e0' }}
-                  onClick={() => {
-                    setShowRedeemModal(false);
-                    showToast('₦1,200 applied as discount on your next repair!');
-                  }}
-                >
-                  <strong style={{ display: 'block', fontSize: 13 }}>Apply to active/next repair</strong>
-                  <small style={{ color: '#64748b' }}>Deduct ₦1,200 directly from your repair bill.</small>
-                </button>
-                <button
-                  className="client-repair-card"
-                  style={{ cursor: 'pointer', textAlign: 'left' }}
-                  onClick={() => {
-                    setShowRedeemModal(false);
-                    showToast('Payout request of ₦1,200 submitted to support.');
-                  }}
-                >
-                  <strong style={{ display: 'block', fontSize: 13 }}>Request bank transfer payout</strong>
-                  <small style={{ color: '#64748b' }}>Transfer reward credits to your bank account.</small>
-                </button>
-              </div>
+              {referralStats.totalEarnings > 0 ? (
+                <div style={{ display: 'grid', gap: 10, margin: '18px 0' }}>
+                  <button
+                    className="client-repair-card"
+                    style={{ cursor: 'pointer', textAlign: 'left', border: '1px solid #73e2e0' }}
+                    onClick={() => {
+                      setShowRedeemModal(false);
+                      showToast(`₦${referralStats.totalEarnings.toLocaleString()} applied as discount on your next repair!`);
+                    }}
+                  >
+                    <strong style={{ display: 'block', fontSize: 13 }}>Apply to active/next repair</strong>
+                    <small style={{ color: '#64748b' }}>Deduct ₦{referralStats.totalEarnings.toLocaleString()} directly from your repair bill.</small>
+                  </button>
+                  <button
+                    className="client-repair-card"
+                    style={{ cursor: 'pointer', textAlign: 'left' }}
+                    onClick={() => {
+                      setShowRedeemModal(false);
+                      showToast(`Payout request of ₦${referralStats.totalEarnings.toLocaleString()} submitted to support.`);
+                    }}
+                  >
+                    <strong style={{ display: 'block', fontSize: 13 }}>Request bank transfer payout</strong>
+                    <small style={{ color: '#64748b' }}>Transfer reward credits to your bank account.</small>
+                  </button>
+                </div>
+              ) : (
+                <div style={{ padding: '24px 0', textAlign: 'center', color: '#64748b' }}>
+                  <p style={{ fontSize: 13 }}>You currently have ₦0 reward balance. Share your referral code to start earning!</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -967,7 +926,7 @@ function OverviewSection({
 }: {
   profileName: string;
   repairs: RepairItem[];
-  activeRepair: RepairItem;
+  activeRepair: RepairItem | null;
   activeCount: number;
   totalCount: number;
   onNew: () => void;
@@ -980,7 +939,7 @@ function OverviewSection({
       <div className="client-welcome">
         <div>
           <p className="eyebrow">Client dashboard</p>
-          <h1>Good morning, {profileName.split(' ')[0]}</h1>
+          <h1>Good morning, {profileName.split(' ')[0] || 'Client'}</h1>
           <p className="muted client-welcome-subtitle">Track your repairs and keep your devices moving.</p>
         </div>
         <button className="primary" onClick={onNew}>+ Submit a repair</button>
@@ -992,7 +951,7 @@ function OverviewSection({
           <span className="card-icon cyan"><ClipboardList /></span>
           <small>Active repairs</small>
           <strong>{activeCount}</strong>
-          <em>{activeRepair.paid ? 'Payment received' : 'Payment needed'}</em>
+          <em>{activeRepair?.paid ? 'Payment received' : (activeCount > 0 ? 'Payment needed' : 'All clear')}</em>
         </div>
         <div>
           <span className="card-icon violet"><Package /></span>
@@ -1003,51 +962,66 @@ function OverviewSection({
       </div>
 
       {/* Featured Active Repair Card */}
-      <div className="client-panel">
-        <div className="panel-title">
-          <div>
-            <h2>Repair #{activeRepair.id}</h2>
-            <p className="muted">{activeRepair.device} - {activeRepair.issue.split('.')[0]}</p>
-          </div>
-          <span className={`status ${activeRepair.paid ? 'paid' : 'awaiting-parts'}`}>
-            {activeRepair.paid ? 'Paid · In progress' : 'Awaiting payment'}
-          </span>
-        </div>
-
-        <div className={`payment-callout ${activeRepair.paid ? 'paid' : ''}`}>
-          <div>
-            <span><CreditCard size={18} /></span>
+      {activeRepair ? (
+        <div className="client-panel">
+          <div className="panel-title">
             <div>
-              <strong>{activeRepair.paid ? 'Payment confirmed' : 'Amount agreed'}</strong>
-              <p>
-                {activeRepair.paid
-                  ? `₦${activeRepair.estimate.toLocaleString()} has been received for repair #${activeRepair.id}.`
-                  : `Diagnostics are complete. Pay ₦${activeRepair.estimate.toLocaleString()} with Paystack to continue.`}
-              </p>
+              <h2>Repair #{activeRepair.id}</h2>
+              <p className="muted">{activeRepair.device} - {activeRepair.issue.split('.')[0]}</p>
             </div>
+            <span className={`status ${activeRepair.paid ? 'paid' : 'awaiting-parts'}`}>
+              {activeRepair.paid ? 'Paid · In progress' : 'Awaiting payment'}
+            </span>
           </div>
-          {activeRepair.paid ? (
-            <span className="status paid">Paid</span>
-          ) : (
-            <button className="primary" onClick={onPay}>Pay ₦{activeRepair.estimate.toLocaleString()}</button>
-          )}
-        </div>
 
-        <div className="timeline">
-          {stages.map((stage, i) => (
-            <div className={i <= activeRepair.stageIndex ? 'done' : ''} key={stage}>
-              <span>{i <= activeRepair.stageIndex ? '✓' : i + 1}</span>
-              <small>{stage}</small>
+          <div className={`payment-callout ${activeRepair.paid ? 'paid' : ''}`}>
+            <div>
+              <span><CreditCard size={18} /></span>
+              <div>
+                <strong>{activeRepair.paid ? 'Payment confirmed' : 'Amount agreed'}</strong>
+                <p>
+                  {activeRepair.paid
+                    ? `₦${activeRepair.estimate.toLocaleString()} has been received for repair #${activeRepair.id}.`
+                    : `Diagnostics are complete. Pay ₦${activeRepair.estimate.toLocaleString()} with Paystack to continue.`}
+                </p>
+              </div>
             </div>
-          ))}
-        </div>
+            {activeRepair.paid ? (
+              <span className="status paid">Paid</span>
+            ) : (
+              <button className="primary" onClick={onPay}>Pay ₦{activeRepair.estimate.toLocaleString()}</button>
+            )}
+          </div>
 
-        <p className="muted update">
-          {activeRepair.paid
-            ? 'Payment received. Repair bench diagnostics and component assembly in progress.'
-            : 'Diagnostics are complete. Pay the agreed amount with Paystack to authorize technician work.'}
-        </p>
-      </div>
+          <div className="timeline">
+            {stages.map((stage, i) => (
+              <div className={i <= activeRepair.stageIndex ? 'done' : ''} key={stage}>
+                <span>{i <= activeRepair.stageIndex ? '✓' : i + 1}</span>
+                <small>{stage}</small>
+              </div>
+            ))}
+          </div>
+
+          <p className="muted update">
+            {activeRepair.paid
+              ? 'Payment received. Repair bench diagnostics and component assembly in progress.'
+              : 'Diagnostics are complete. Pay the agreed amount with Paystack to authorize technician work.'}
+          </p>
+        </div>
+      ) : (
+        <div className="client-panel" style={{ textAlign: 'center', padding: '36px 20px' }}>
+          <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#e0f7f6', color: '#08a4b3', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
+            <Wrench size={24} />
+          </div>
+          <h3 style={{ fontSize: 17, fontWeight: 700, margin: '0 0 8px', color: '#1e293b' }}>No Active Repairs</h3>
+          <p style={{ color: '#64748b', fontSize: 13, maxWidth: 380, margin: '0 auto 18px', lineHeight: 1.5 }}>
+            You do not currently have any devices in the workshop. Submit a repair request to get your phone, laptop, or gadget fixed.
+          </p>
+          <button className="primary" onClick={onNew} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, margin: '0 auto' }}>
+            + Submit a repair request
+          </button>
+        </div>
+      )}
 
       {/* Repair History */}
       <div className="client-panel">
@@ -1056,25 +1030,31 @@ function OverviewSection({
             <h2>Repair history</h2>
             <p className="muted">Your devices and past work orders</p>
           </div>
-          <button className="text-button" onClick={onViewAll}>View all {'->'}</button>
+          {repairs.length > 1 && <button className="text-button" onClick={onViewAll}>View all {'->'}</button>}
         </div>
 
-        {repairs.slice(1).map(repair => (
-          <div
-            className="history-row"
-            key={repair.id}
-            onClick={() => onSelectRepair(repair)}
-            style={{ cursor: 'pointer' }}
-            title="Click to view details"
-          >
-            <strong>#{repair.id}</strong>
-            <span>{repair.device} - {repair.issue.split('.')[0]}</span>
-            <span className={`status ${repair.status === 'Collected' ? 'ready-for-pickup' : 'in-progress'}`}>
-              {repair.status}
-            </span>
-            <span>₦{repair.estimate.toLocaleString()}</span>
-          </div>
-        ))}
+        {repairs.length > 1 ? (
+          repairs.slice(1).map(repair => (
+            <div
+              className="history-row"
+              key={repair.id}
+              onClick={() => onSelectRepair(repair)}
+              style={{ cursor: 'pointer' }}
+              title="Click to view details"
+            >
+              <strong>#{repair.id}</strong>
+              <span>{repair.device} - {repair.issue.split('.')[0]}</span>
+              <span className={`status ${repair.status === 'Collected' ? 'ready-for-pickup' : 'in-progress'}`}>
+                {repair.status}
+              </span>
+              <span>₦{repair.estimate.toLocaleString()}</span>
+            </div>
+          ))
+        ) : (
+          <p className="muted" style={{ padding: '16px 0 6px', fontSize: 13, textAlign: 'center' }}>
+            {repairs.length === 0 ? 'No repairs logged yet.' : 'All current repairs shown above.'}
+          </p>
+        )}
       </div>
     </>
   );
@@ -1093,7 +1073,7 @@ function NewRepairSection({
   const [deviceType, setDeviceType] = useState<'Phone' | 'Laptop' | 'Tablet' | 'Smartwatch' | 'Other'>('Phone');
   const [model, setModel] = useState('');
   const [issue, setIssue] = useState('');
-  const [phone, setPhone] = useState(contactNumber || '080 1234 5678');
+  const [phone, setPhone] = useState(contactNumber || '');
   const [dropoffDate, setDropoffDate] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() + 1);
@@ -1473,17 +1453,38 @@ function MessagesSection({
 }) {
   const [draft, setDraft] = useState('');
   const chatBottomRef = useRef<HTMLDivElement>(null);
-  const activeThread = threads.find(t => t.id === activeThreadId) || threads[0];
+  const activeThread = threads.find(t => t.id === activeThreadId) || threads[0] || null;
 
   const handleSend = (e: FormEvent) => {
     e.preventDefault();
-    if (!draft.trim()) return;
+    if (!activeThread || !draft.trim()) return;
     onSendMessage(activeThread.id, draft.trim());
     setDraft('');
     setTimeout(() => {
       chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, 100);
   };
+
+  if (!activeThread || threads.length === 0) {
+    return (
+      <div className="client-panel" style={{ padding: 0, overflow: 'hidden' }}>
+        <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid #edf2f7' }}>
+          <p className="eyebrow">Direct messaging</p>
+          <h1 style={{ fontSize: 24, margin: '4px 0' }}>Repair conversations</h1>
+          <p className="muted" style={{ fontSize: 13 }}>Live chat with your repair technician and Kendat FixLap customer care.</p>
+        </div>
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: '#64748b' }}>
+          <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#e0f7f6', color: '#08a4b3', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+            <MessageSquare size={26} />
+          </div>
+          <h3 style={{ fontSize: 18, fontWeight: 700, margin: '0 0 8px', color: '#1e293b' }}>No Messages Yet</h3>
+          <p style={{ fontSize: 13, maxWidth: 380, margin: '0 auto 20px', lineHeight: 1.5 }}>
+            Direct chat threads are automatically opened with your assigned technician as soon as your device diagnostics or work begins.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="client-panel" style={{ padding: 0, overflow: 'hidden' }}>
@@ -1567,16 +1568,25 @@ function MessagesSection({
 
 // ---------------------- 5. REFERRALS SECTION ----------------------
 function ReferralSection({
+  referralCode,
+  totalEarnings,
+  successfulInvites,
+  referrals,
   copied,
   onCopy,
   onRedeem,
 }: {
+  referralCode: string;
+  totalEarnings: number;
+  successfulInvites: number;
+  referrals: { id: number; refereeName: string; status: string; reward: number; date: string }[];
   copied: boolean;
   onCopy: () => void;
   onRedeem: () => void;
 }) {
   const basePath = typeof window !== 'undefined' && window.location.pathname.startsWith('/fixlap') ? '/fixlap' : '';
-  const link = `${window.location.origin}${basePath}/referral/sarah-johnson-7K2P`;
+  const code = referralCode || 'FL-FRIEND';
+  const link = `${window.location.origin}${basePath}/referral/${code}`;
   const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(
     `Get ₦1,000 off your next phone or laptop repair at Kendat FixLap! Use my invite link: ${link}`
   )}`;
@@ -1588,8 +1598,8 @@ function ReferralSection({
         <div>
           <span className="card-icon amber"><Gift /></span>
           <small>Referral wallet balance</small>
-          <strong>₦1,200</strong>
-          <em>6 successful referrals rewarded</em>
+          <strong>₦{totalEarnings.toLocaleString()}</strong>
+          <em>{successfulInvites} successful {successfulInvites === 1 ? 'referral' : 'referrals'} rewarded</em>
         </div>
       </div>
 
@@ -1602,7 +1612,7 @@ function ReferralSection({
               When a friend you invite completes a repair above ₦5,000, you automatically earn ₦200 in reward wallet balance.
             </p>
           </div>
-          <button className="primary" onClick={onRedeem}>Redeem ₦1,200 balance</button>
+          <button className="primary" onClick={onRedeem}>Redeem ₦{totalEarnings.toLocaleString()} balance</button>
         </div>
 
         {/* Link box */}
@@ -1637,12 +1647,12 @@ function ReferralSection({
           <div className="referral-step-card">
             <b>1</b>
             <strong>Share your link</strong>
-            <p>Send your unique invite link or QR code to friends, colleagues, or family.</p>
+            <p>Send your unique invite link or referral code to friends, colleagues, or family.</p>
           </div>
           <div className="referral-step-card">
             <b>2</b>
             <strong>Friend books a repair</strong>
-            <p>They get a priority diagnostic check and instant ₦1,000 voucher on first repair.</p>
+            <p>They get a priority diagnostic check and instant ₦1,000 voucher on their first repair.</p>
           </div>
           <div className="referral-step-card">
             <b>3</b>
@@ -1652,21 +1662,21 @@ function ReferralSection({
         </div>
 
         <h2>Referral activity history</h2>
-        <div className="history-row">
-          <strong>Michael Smith</strong>
-          <span>iPhone 11 Screen repair - ₦18,000</span>
-          <span className="status ready-for-pickup">+ ₦200 earned</span>
-        </div>
-        <div className="history-row">
-          <strong>Chinedu Okeke</strong>
-          <span>HP Envy Battery service - ₦24,000</span>
-          <span className="status ready-for-pickup">+ ₦200 earned</span>
-        </div>
-        <div className="history-row">
-          <strong>Fatima Bello</strong>
-          <span>Samsung S21 Charging Port - ₦15,000</span>
-          <span className="status ready-for-pickup">+ ₦200 earned</span>
-        </div>
+        {referrals && referrals.length > 0 ? (
+          referrals.map((item) => (
+            <div className="history-row" key={item.id}>
+              <strong>{item.refereeName}</strong>
+              <span>Joined · {item.date}</span>
+              <span className={`status ${item.status === 'converted' ? 'ready-for-pickup' : 'awaiting-parts'}`}>
+                {item.status === 'converted' ? `+ ₦${item.reward.toLocaleString()} earned` : 'Pending repair'}
+              </span>
+            </div>
+          ))
+        ) : (
+          <p className="muted" style={{ padding: '16px 0', fontSize: 13, textAlign: 'center' }}>
+            No referral rewards recorded yet. Invite friends using your code <strong>{code}</strong> to start earning!
+          </p>
+        )}
       </div>
     </>
   );
@@ -1706,27 +1716,41 @@ function DocumentsSection({
           </button>
         ))}
 
-        <button onClick={() => onOpenDoc('warranty', repairs.find(r => r.id === 'FL-1039') || repairs[0])}>
-          <ShieldCheck size={18} />
-          <div>
-            <span style={{ fontWeight: 700, display: 'block' }}>90-Day Workmanship Warranty Certificate</span>
-            <small style={{ color: '#718096', fontSize: 11 }}>MacBook Air M1 · Valid until 4 Dec 2026</small>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span className="status ready-for-pickup" style={{ fontSize: 10 }}>Active coverage</span>
-          </div>
-        </button>
+        {/* Dynamic warranty certificates for client's completed repairs */}
+        {repairs.filter(r => r.paid || r.status === 'Completed' || r.status === 'Collected').map(r => (
+          <button key={`warr-${r.id}`} onClick={() => onOpenDoc('warranty', r)}>
+            <ShieldCheck size={18} />
+            <div>
+              <span style={{ fontWeight: 700, display: 'block' }}>90-Day Workmanship Warranty Certificate #{r.id}</span>
+              <small style={{ color: '#718096', fontSize: 11 }}>{r.device} · Certified repair coverage</small>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span className="status ready-for-pickup" style={{ fontSize: 10 }}>Active coverage</span>
+            </div>
+          </button>
+        ))}
 
-        <button onClick={() => onOpenDoc('diagnostic', repairs.find(r => r.id === 'FL-1048') || repairs[0])}>
-          <ClipboardList size={18} />
-          <div>
-            <span style={{ fontWeight: 700, display: 'block' }}>Diagnostic Technical Report FL-1048</span>
-            <small style={{ color: '#718096', fontSize: 11 }}>iPhone 13 Pro · Bench multi-point test</small>
+        {/* Dynamic diagnostic reports for client's repairs */}
+        {repairs.map(r => (
+          <button key={`diag-${r.id}`} onClick={() => onOpenDoc('diagnostic', r)}>
+            <ClipboardList size={18} />
+            <div>
+              <span style={{ fontWeight: 700, display: 'block' }}>Diagnostic Technical Report #{r.id}</span>
+              <small style={{ color: '#718096', fontSize: 11 }}>{r.device} · Bench multi-point test</small>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span className="status awaiting-parts" style={{ fontSize: 10 }}>Verified report</span>
+            </div>
+          </button>
+        ))}
+
+        {repairs.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '36px 12px', color: '#64748b' }}>
+            <FileText size={32} style={{ color: '#94a3b8', margin: '0 auto 10px', display: 'block' }} />
+            <strong style={{ display: 'block', fontSize: 15, color: '#334155', marginBottom: 4 }}>No documents available yet</strong>
+            <span style={{ fontSize: 13 }}>Official receipts, diagnostic assessments, and warranty certificates will appear here when you submit repair jobs.</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span className="status awaiting-parts" style={{ fontSize: 10 }}>Verified report</span>
-          </div>
-        </button>
+        )}
       </div>
     </div>
   );
@@ -1772,7 +1796,7 @@ function SettingsSection({
   const handleSave = (e: FormEvent) => {
     e.preventDefault();
     onSave({
-      name: name.trim() || 'Sarah Johnson',
+      name: name.trim(),
       email: email.trim(),
       phone: phone.trim(),
       avatarUrl: avatar,
@@ -1924,39 +1948,41 @@ function HelpSection({
         <div className="client-tracker-box">
           <strong style={{ fontSize: 14 }}>Track repair progress</strong>
           <p style={{ fontSize: 12, color: '#64748b', margin: '4px 0 10px' }}>
-            Enter your Kendat FixLap repair reference code (e.g. <code>FL-1048</code> or <code>FL-1039</code>):
+            Enter your Kendat FixLap repair reference tracking number:
           </p>
           <div className="client-tracker-input-row">
             <input
-              placeholder="e.g. FL-1048"
+              placeholder="e.g. FL-..."
               value={trackQuery}
               onChange={e => setTrackQuery(e.target.value)}
             />
-            <button className="primary" onClick={() => onTrack(trackQuery || 'FL-1048')}>
+            <button className="primary" onClick={() => trackQuery.trim() && onTrack(trackQuery.trim())}>
               Track repair
             </button>
           </div>
-          <div style={{ display: 'flex', gap: 8, marginTop: 8, fontSize: 11, color: '#64748b' }}>
-            <span>Quick try:</span>
-            {repairs.slice(0, 3).map(r => (
-              <button
-                key={r.id}
-                type="button"
-                style={{ background: 'none', border: 0, padding: 0, color: '#08a4b3', textDecoration: 'underline', cursor: 'pointer', fontSize: 11 }}
-                onClick={() => {
-                  setTrackQuery(r.id);
-                  onTrack(r.id);
-                }}
-              >
-                #{r.id} ({r.device})
-              </button>
-            ))}
-          </div>
+          {repairs.length > 0 && (
+            <div style={{ display: 'flex', gap: 8, marginTop: 8, fontSize: 11, color: '#64748b' }}>
+              <span>Your repairs:</span>
+              {repairs.slice(0, 3).map(r => (
+                <button
+                  key={r.id}
+                  type="button"
+                  style={{ background: 'none', border: 0, padding: 0, color: '#08a4b3', textDecoration: 'underline', cursor: 'pointer', fontSize: 11 }}
+                  onClick={() => {
+                    setTrackQuery(r.id);
+                    onTrack(r.id);
+                  }}
+                >
+                  #{r.id} ({r.device})
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Support Grid Cards */}
         <div className="help-grid">
-          <div style={{ cursor: 'pointer' }} onClick={() => onTrack('FL-1048')}>
+          <div style={{ cursor: 'pointer' }} onClick={() => repairs[0]?.id && onTrack(repairs[0].id)}>
             <HelpCircle size={20} />
             <strong>Track an active repair</strong>
             <span>Check diagnostics, parts status, and collection ETA.</span>

@@ -21,8 +21,13 @@ class ReferralController extends Controller
         $totalEarnings = $referrals->where('status', 'converted')->sum('reward_amount');
         $successfulInvites = $referrals->where('status', 'converted')->count();
 
+        if (empty($user->referral_code)) {
+            $user->referral_code = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $user->name ?: 'USER'), 0, 5) . rand(100, 999));
+            $user->save();
+        }
+
         return response()->json([
-            'referralCode' => $user->referral_code ?? 'SARAH200',
+            'referralCode' => $user->referral_code,
             'totalEarnings' => (float) $totalEarnings,
             'successfulInvites' => $successfulInvites,
             'pendingInvites' => $referrals->where('status', 'pending')->count(),

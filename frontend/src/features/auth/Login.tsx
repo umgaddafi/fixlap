@@ -1,21 +1,20 @@
 import { useState } from 'react';
 import { ArrowLeft, ArrowRight, Eye, EyeOff, ShieldCheck, Wrench } from 'lucide-react';
 import type { Role } from '../../types';
-import users from '../../data/users.json';
 import { api } from '../../api/client';
 import BrandLogo from '../../components/BrandLogo';
 import './staff-login.css';
 
 interface LoginProps {
   initialRole?: Role;
-  onLogin: (role: Role, remember: boolean) => void;
+  onLogin: (role: Role, remember: boolean, email?: string) => void;
   onBack: () => void;
 }
 
 export default function Login({ initialRole = 'repairer', onLogin, onBack }: LoginProps) {
   const [role, setRole] = useState<Role>(initialRole);
-  const [email, setEmail] = useState(initialRole === 'admin' ? 'admin@fixlab.com' : 'repairer@fixlab.com');
-  const [password, setPassword] = useState('password');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [forgotHelp, setForgotHelp] = useState(false);
@@ -23,7 +22,6 @@ export default function Login({ initialRole = 'repairer', onLogin, onBack }: Log
 
   const chooseRole = (next: Role) => {
     setRole(next);
-    setEmail(next === 'admin' ? 'admin@fixlab.com' : 'repairer@fixlab.com');
     setError('');
     setForgotHelp(false);
   };
@@ -48,16 +46,10 @@ export default function Login({ initialRole = 'repairer', onLogin, onBack }: Log
     setError('');
 
     try {
-      await api.auth.login(email.trim().toLowerCase(), password, role, remember);
-      onLogin(role, remember);
+      const res = await api.auth.login(email.trim().toLowerCase(), password, role, remember);
+      onLogin(role, remember, res?.user?.email || email.trim().toLowerCase());
     } catch (err: any) {
-      // Fallback check if backend was temporarily unreachable
-      const found = users.staff.find(user => user.email === email.trim().toLowerCase() && user.password === password && user.role === role);
-      if (found) {
-        onLogin(role, remember);
-      } else {
-        setError(err.message || `Those details do not match ${role === 'admin' ? 'an administrator' : 'a technician'} account.`);
-      }
+      setError(err.message || `Those details do not match ${role === 'admin' ? 'an administrator' : 'a technician'} account.`);
     } finally {
       setSubmitting(false);
     }
@@ -89,12 +81,11 @@ export default function Login({ initialRole = 'repairer', onLogin, onBack }: Log
             </div>
             <div className="staff-password-input"><input id="staff-password" name="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={event => { setPassword(event.target.value); setError(''); }} aria-invalid={Boolean(error)} aria-describedby={error ? 'staff-login-error' : undefined} required /><button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div>
           </div>
-          {forgotHelp && <div className="staff-login-help">Staff accounts are managed by your administrator. Contact Alex Doe at <strong>admin@fixlab.com</strong> or use the demo credentials below.</div>}
+          {forgotHelp && <div className="staff-login-help">Staff accounts are managed by your administrator. Please contact your system administrator to reset your credentials.</div>}
           <label className="staff-remember"><input type="checkbox" checked={remember} onChange={event => setRemember(event.target.checked)} /> Remember me on this device</label>
           {error && <p id="staff-login-error" className="staff-login-error" role="alert">{error}</p>}
-          <button className="primary full" type="submit">Open my workspace <ArrowRight size={17} /></button>
+          <button className="primary full" type="submit" disabled={submitting}>{submitting ? 'Signing in...' : 'Open my workspace'} <ArrowRight size={17} /></button>
         </form>
-        <details className="staff-demo-details"><summary>Demo account details</summary><p>Technician: <strong>repairer@fixlab.com</strong><br />Administrator: <strong>admin@fixlab.com</strong><br />Password for both: <strong>password</strong></p></details>
       </div>
       <p className="login-footer">© {new Date().getFullYear()} Kendat FixLap · A better repair experience</p>
     </main>

@@ -6,6 +6,9 @@ use Symfony\Component\Console\Input\ArgvInput;
 
 define('LARAVEL_START', microtime(true));
 
+// Load polyfills
+require_once __DIR__.'/bootstrap/polyfills.php';
+
 // Register the Composer autoloader...
 require __DIR__.'/vendor/autoload.php';
 

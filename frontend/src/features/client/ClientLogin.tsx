@@ -29,12 +29,6 @@ export default function ClientLogin({ onLogin, onBack, referredBy }: ClientLogin
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const fillDemo = () => {
-    setEmail('client@fixlap.com');
-    setPassword('password');
-    setError('');
-  };
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
@@ -53,12 +47,7 @@ export default function ClientLogin({ onLogin, onBack, referredBy }: ClientLogin
         await api.auth.login(email.trim().toLowerCase(), password, 'client', remember);
         onLogin();
       } catch (err: any) {
-        const cleanEmail = email.trim().toLowerCase();
-        if ((cleanEmail === 'client@fixlab.com' || cleanEmail === 'client@fixlap.com') && password === 'password') {
-          onLogin();
-        } else {
-          setError(err.message || 'Invalid email address or password.');
-        }
+        setError(err.message || 'Invalid email address or password.');
       } finally {
         setSubmitting(false);
       }
@@ -264,7 +253,7 @@ export default function ClientLogin({ onLogin, onBack, referredBy }: ClientLogin
                       id="client-fullname"
                       type="text"
                       required
-                      placeholder="e.g. Sarah Johnson"
+                      placeholder="e.g. John Doe"
                       value={fullName}
                       onChange={(e) => {
                         setFullName(e.target.value);
@@ -383,7 +372,7 @@ export default function ClientLogin({ onLogin, onBack, referredBy }: ClientLogin
                     <input
                       id="client-referral"
                       type="text"
-                      placeholder="e.g. SARAH200"
+                      placeholder="e.g. FIX200"
                       value={code}
                       onChange={(e) => setCode(e.target.value.toUpperCase())}
                     />
@@ -415,16 +404,6 @@ export default function ClientLogin({ onLogin, onBack, referredBy }: ClientLogin
                 {mode === 'register' ? 'Create account' : 'Sign in'} <ArrowRight size={17} />
               </button>
             </form>
-
-            {/* Quick Demo Helper for Login */}
-            {mode === 'login' && (
-              <div className="client-demo-bar">
-                <span>Demo account: <strong>client@fixlap.com</strong></span>
-                <button type="button" className="client-demo-btn" onClick={fillDemo}>
-                  Quick fill
-                </button>
-              </div>
-            )}
 
             {/* Bottom Switch between modes */}
             <div className="client-bottom-switch">
