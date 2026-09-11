@@ -342,6 +342,7 @@ export default function ClientDashboard({ onLogout }: { onLogout: () => void }) 
     const targetRepair = repairs.find(r => r.id === repairId) || repairs[0];
     let key = paystackKey || (import.meta.env.VITE_PAYSTACK_PUBLIC_KEY as string | undefined);
 
+    // If key not yet in state, fetch dynamically from backend config
     if (!key) {
       try {
         const config = await api.payments.config();
@@ -354,10 +355,9 @@ export default function ClientDashboard({ onLogout }: { onLogout: () => void }) 
       }
     }
 
-    // Default fallback to configured Paystack public key if backend config request was unreachable
     if (!key) {
-      key = 'pk_test_f1543f74336d89f3e67ee441f296d715f3273552';
-      setPaystackKey(key);
+      showToast('Paystack key could not be retrieved from backend .env.');
+      return;
     }
 
     const openCheckout = () => {

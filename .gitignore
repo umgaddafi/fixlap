@@ -3,13 +3,20 @@ node_modules/
 .vite/
 dist/
 
-# Backend
-backend/vendor/
+# Environment Files (Keep all secrets strictly local!)
+.env
+.env.*
+!.env.example
 backend/.env
 backend/.env.*
+!backend/.env.example
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
 *.local_backup
-backend/.env.backup
-backend/.env.production
+
+# Backend
+backend/vendor/
 backend/storage/*.key
 backend/storage/framework/cache/data/*
 backend/storage/framework/sessions/*
