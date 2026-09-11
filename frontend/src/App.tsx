@@ -21,19 +21,37 @@ const routes = {
 
 type Page = keyof typeof routes;
 
+const getBasePath = (): string => {
+  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/fixlap')) {
+    return '/fixlap';
+  }
+  return '';
+};
+
+function normalizePath(rawPath: string): string {
+  const base = getBasePath();
+  if (base && rawPath.startsWith(base)) {
+    const stripped = rawPath.slice(base.length);
+    return stripped.startsWith('/') ? stripped : `/${stripped}`;
+  }
+  return rawPath || '/';
+}
+
 function pageFromPath(path: string): Page {
-  if (path.startsWith('/referral/')) return 'client-login';
-  return (Object.keys(routes) as Page[]).find(page => routes[page] === path) ?? 'home';
+  const normalized = normalizePath(path);
+  if (normalized.startsWith('/referral/')) return 'client-login';
+  return (Object.keys(routes) as Page[]).find(page => routes[page] === normalized) ?? 'home';
 }
 
 export default function App() {
   const [path, setPath] = useState(window.location.pathname);
   const [staffSession, setStaffSession] = useState(readStaffSession);
-  const [loginRole, setLoginRole] = useState<Role>(path === routes.admin ? 'admin' : 'repairer');
+  const normalizedPath = normalizePath(path);
   const page = pageFromPath(path);
+  const [loginRole, setLoginRole] = useState<Role>(normalizedPath === routes.admin ? 'admin' : 'repairer');
   const staffPage = page === 'repairer' || page === 'admin';
   const canOpenStaffPage = staffPage && staffSession?.role === page;
-  const referralCode = path.startsWith('/referral/') ? path.split('/')[2] : undefined;
+  const referralCode = normalizedPath.startsWith('/referral/') ? normalizedPath.split('/')[2] : undefined;
 
   useEffect(() => {
     const onPopState = () => {
@@ -47,14 +65,18 @@ export default function App() {
   useEffect(() => {
     if (staffPage && !canOpenStaffPage) {
       setLoginRole(page);
-      window.history.replaceState({}, '', routes.login);
-      setPath(routes.login);
+      const base = getBasePath();
+      const target = `${base}${routes.login}`;
+      window.history.replaceState({}, '', target);
+      setPath(target);
     }
   }, [page, staffPage, canOpenStaffPage]);
 
   const navigate = (next: Page) => {
-    window.history.pushState({}, '', routes[next]);
-    setPath(routes[next]);
+    const base = getBasePath();
+    const target = `${base}${routes[next]}`;
+    window.history.pushState({}, '', target);
+    setPath(target);
     window.scrollTo(0, 0);
   };
 

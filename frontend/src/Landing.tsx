@@ -1,6 +1,7 @@
 import { ArrowRight, CheckCircle2, Clock3, HelpCircle, Laptop, Lock, Menu, MessageCircle, Phone, ShieldCheck, Smartphone, Sparkles, Tablet, User, Wrench, X, Zap } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import BrandLogo from './components/BrandLogo';
+import { useScrollReveal } from './hooks/useScrollReveal';
 
 type Props = { onStaffLogin: () => void; onClientLogin: () => void };
 const services = [
@@ -12,6 +13,9 @@ const services = [
 export default function Landing({ onStaffLogin, onClientLogin }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showTop, setShowTop] = useState(false);
+  const containerRef = useRef<HTMLElement>(null);
+
+  useScrollReveal(containerRef);
 
   useEffect(() => {
     const onScroll = () => setShowTop(window.scrollY > 420);
@@ -33,7 +37,7 @@ export default function Landing({ onStaffLogin, onClientLogin }: Props) {
   }, [menuOpen]);
 
   return (
-    <main className="landing">
+    <main className="landing" ref={containerRef}>
       {/* Sticky Top Navigation Bar */}
       <nav className="landing-nav">
         <a className="brand" href="#top">
@@ -212,7 +216,7 @@ export default function Landing({ onStaffLogin, onClientLogin }: Props) {
       </section>
 
       <section id="services" className="landing-services">
-        <div className="section-intro">
+        <div className="section-intro scroll-reveal-header">
           <div className="section-intro-left">
             <p className="eyebrow">What we repair</p>
             <h2>Technology deserves<br/><span>better care.</span></h2>
@@ -220,8 +224,12 @@ export default function Landing({ onStaffLogin, onClientLogin }: Props) {
           <p className="section-intro-desc">From everyday fixes to complex faults, our technicians bring clarity and care to every repair.</p>
         </div>
         <div className="service-cards">
-          {services.map(({ icon: Icon, title, text, image }) => (
-            <article className="service-card" key={title}>
+          {services.map(({ icon: Icon, title, text, image }, index) => (
+            <article 
+              className="service-card scroll-reveal-card" 
+              key={title}
+              style={{ '--reveal-index': index } as React.CSSProperties}
+            >
               <img src={image} alt={`${title} repair service`}/>
               <div className="service-card-body">
                 <div className="service-card-title-row">
@@ -237,39 +245,45 @@ export default function Landing({ onStaffLogin, onClientLogin }: Props) {
       </section>
 
       <section id="why" className="landing-why">
-        <div>
+        <div className="scroll-reveal-header">
           <p className="eyebrow">Why Kendat FixLap</p>
           <h2>Repair without<br/><span>the uncertainty.</span></h2>
         </div>
         <div className="why-grid">
-          <div><b>01</b><h3>Clear diagnosis</h3><p>We explain the fault and the cost before any work begins.</p></div>
-          <div><b>02</b><h3>Skilled technicians</h3><p>Every repair is completed and tested by trained specialists.</p></div>
-          <div><b>03</b><h3>Peace of mind</h3><p>Your repair is backed by our 90-day workmanship warranty.</p></div>
+          <div className="scroll-reveal-card" style={{ '--reveal-index': 0 } as React.CSSProperties}>
+            <b>01</b><h3>Clear diagnosis</h3><p>We explain the fault and the cost before any work begins.</p>
+          </div>
+          <div className="scroll-reveal-card" style={{ '--reveal-index': 1 } as React.CSSProperties}>
+            <b>02</b><h3>Skilled technicians</h3><p>Every repair is completed and tested by trained specialists.</p>
+          </div>
+          <div className="scroll-reveal-card" style={{ '--reveal-index': 2 } as React.CSSProperties}>
+            <b>03</b><h3>Peace of mind</h3><p>Your repair is backed by our 90-day workmanship warranty.</p>
+          </div>
         </div>
       </section>
 
       {/* How it works - Vertical process cards */}
       <section id="how" className="landing-process">
-        <div className="section-intro-process">
+        <div className="section-intro-process scroll-reveal-header">
           <p className="eyebrow">How it works</p>
           <h2>Simple from start to finish.</h2>
         </div>
         <div className="process-grid">
-          <div className="process-card">
+          <div className="process-card scroll-reveal-card" style={{ '--reveal-index': 0 } as React.CSSProperties}>
             <div className="process-step-badge">01</div>
             <div className="process-card-content">
               <h3>Tell us what’s wrong</h3>
               <p>Submit your device details and photos from your dashboard.</p>
             </div>
           </div>
-          <div className="process-card">
+          <div className="process-card scroll-reveal-card" style={{ '--reveal-index': 1 } as React.CSSProperties}>
             <div className="process-step-badge">02</div>
             <div className="process-card-content">
               <h3>We diagnose it</h3>
               <p>Our repairer reviews the device and confirms the estimate.</p>
             </div>
           </div>
-          <div className="process-card">
+          <div className="process-card scroll-reveal-card" style={{ '--reveal-index': 2 } as React.CSSProperties}>
             <div className="process-step-badge">03</div>
             <div className="process-card-content">
               <h3>Track every step</h3>

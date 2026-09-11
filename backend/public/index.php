@@ -17,4 +17,10 @@ require __DIR__.'/../vendor/autoload.php';
 /** @var Application $app */
 $app = require_once __DIR__.'/../bootstrap/app.php';
 
+// Support subfolder deployments (e.g. /fixlap/api in XAMPP/LAMPP)
+if (isset($_SERVER['REQUEST_URI']) && str_starts_with($_SERVER['REQUEST_URI'], '/fixlap/api')) {
+    $_SERVER['REQUEST_URI'] = substr($_SERVER['REQUEST_URI'], 7);
+    $_SERVER['SCRIPT_NAME'] = '/index.php';
+}
+
 $app->handleRequest(Request::capture());

@@ -1,6 +1,7 @@
 import { ArrowRight, CheckCircle2, ChevronDown, Facebook, Instagram, Linkedin, Quote, Sparkles, Star, Twitter } from 'lucide-react';
-import { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import BrandLogo from '../../components/BrandLogo';
+import { useScrollReveal } from '../../hooks/useScrollReveal';
 
 const testimonials = [
   {
@@ -55,6 +56,9 @@ const testimonials = [
 
 export default function LandingExtras({ onClientLogin }: { onClientLogin: () => void }) {
   const [open, setOpen] = useState<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  useScrollReveal(containerRef);
+
   const faqs = [
     'How long does a typical repair take?',
     'Will I know the price before work starts?',
@@ -65,9 +69,9 @@ export default function LandingExtras({ onClientLogin }: { onClientLogin: () => 
   const marqueeItems = [...testimonials, ...testimonials];
 
   return (
-    <>
+    <div ref={containerRef} className="landing-extras-wrap">
       <section id="testimonials" className="landing-testimonials">
-        <div className="testimonials-header">
+        <div className="testimonials-header scroll-reveal-header">
           <div className="testimonials-title-wrap">
             <p className="eyebrow">Loved by device owners</p>
             <h2>Good repairs.<br/><span>Happy customers.</span></h2>
@@ -108,14 +112,18 @@ export default function LandingExtras({ onClientLogin }: { onClientLogin: () => 
       </section>
 
       <section className="landing-faq">
-        <div>
+        <div className="scroll-reveal-header">
           <p className="eyebrow">Questions, answered</p>
           <h2>Everything you need<br/>to know.</h2>
           <p>Still unsure? Our team is happy to help.</p>
         </div>
         <div>
           {faqs.map((faq, i) => (
-            <div className="faq-row" key={faq}>
+            <div 
+              className="faq-row scroll-reveal-card" 
+              key={faq}
+              style={{ '--reveal-index': i } as React.CSSProperties}
+            >
               <button onClick={() => setOpen(open === i ? null : i)}>
                 {faq}
                 <ChevronDown className={open === i ? 'rotate' : ''} size={18}/>
@@ -128,7 +136,7 @@ export default function LandingExtras({ onClientLogin }: { onClientLogin: () => 
         </div>
       </section>
 
-      <section className="landing-cta">
+      <section className="landing-cta scroll-reveal-banner">
         <Sparkles size={24}/>
         <div>
           <p className="eyebrow">Ready when you are</p>
@@ -173,7 +181,7 @@ export default function LandingExtras({ onClientLogin }: { onClientLogin: () => 
           <span className="text-orange-500"> <a className="text-orange-500" href="http://kisprojectslab.com" target="_blank" rel="noopener noreferrer">Developed by Kendat Tech</a></span>
         </div>
       </footer>
-    </>
+    </div>
   );
 }
 

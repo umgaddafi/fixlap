@@ -1,9 +1,12 @@
 {
   "staff": [
+    { "email": "repairer@fixlap.com", "password": "password", "role": "repairer", "name": "Jordan Malik" },
     { "email": "repairer@fixlab.com", "password": "password", "role": "repairer", "name": "Jordan Malik" },
+    { "email": "admin@fixlap.com", "password": "password", "role": "admin", "name": "Alex Doe" },
     { "email": "admin@fixlab.com", "password": "password", "role": "admin", "name": "Alex Doe" }
   ],
   "clients": [
+    { "email": "client@fixlap.com", "password": "password", "name": "Sarah Johnson", "referralCode": "SARAH200" },
     { "email": "client@fixlab.com", "password": "password", "name": "Sarah Johnson", "referralCode": "SARAH200" }
   ]
 }

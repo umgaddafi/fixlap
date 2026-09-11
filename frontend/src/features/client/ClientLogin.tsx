@@ -30,7 +30,7 @@ export default function ClientLogin({ onLogin, onBack, referredBy }: ClientLogin
   const [submitting, setSubmitting] = useState(false);
 
   const fillDemo = () => {
-    setEmail('client@fixlab.com');
+    setEmail('client@fixlap.com');
     setPassword('password');
     setError('');
   };
@@ -53,7 +53,8 @@ export default function ClientLogin({ onLogin, onBack, referredBy }: ClientLogin
         await api.auth.login(email.trim().toLowerCase(), password, 'client', remember);
         onLogin();
       } catch (err: any) {
-        if (email.trim().toLowerCase() === 'client@fixlab.com' && password === 'password') {
+        const cleanEmail = email.trim().toLowerCase();
+        if ((cleanEmail === 'client@fixlab.com' || cleanEmail === 'client@fixlap.com') && password === 'password') {
           onLogin();
         } else {
           setError(err.message || 'Invalid email address or password.');
@@ -418,7 +419,7 @@ export default function ClientLogin({ onLogin, onBack, referredBy }: ClientLogin
             {/* Quick Demo Helper for Login */}
             {mode === 'login' && (
               <div className="client-demo-bar">
-                <span>Demo account: <strong>client@fixlab.com</strong></span>
+                <span>Demo account: <strong>client@fixlap.com</strong></span>
                 <button type="button" className="client-demo-btn" onClick={fillDemo}>
                   Quick fill
                 </button>

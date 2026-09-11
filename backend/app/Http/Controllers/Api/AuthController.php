@@ -26,7 +26,7 @@ class AuthController extends Controller
             'role' => 'nullable|string|in:admin,repairer,client',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $user = $this->findUserByIdentifier($request->email);
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
             return response()->json([
@@ -161,7 +161,7 @@ class AuthController extends Controller
         ]);
 
         $identifier = trim($request->identifier);
-        $user = User::where('email', $identifier)->orWhere('phone', $identifier)->first();
+        $user = $this->findUserByIdentifier($identifier);
 
         $otp = sprintf('%06d', random_int(100000, 999999));
         $cacheKey = "fixlab_otp_" . md5($identifier);
@@ -224,7 +224,7 @@ class AuthController extends Controller
         // Clean up code once consumed
         Cache::forget($cacheKey);
 
-        $user = User::where('email', $identifier)->orWhere('phone', $identifier)->first();
+        $user = $this->findUserByIdentifier($identifier);
         $token = null;
         if ($user) {
             $token = $user->createToken('auth-token')->plainTextToken;
@@ -243,5 +243,26 @@ class AuthController extends Controller
                 'role' => $user->role,
             ] : null,
         ]);
+    }
+
+    /**
+     * Look up user by email or phone, automatically resolving domain aliases (fixlap.com <-> fixlab.com).
+     */
+    protected function findUserByIdentifier(string $identifier): ?User
+    {
+        $clean = strtolower(trim($identifier));
+        $user = User::where('email', $clean)->orWhere('phone', $clean)->first();
+
+        if (! $user && str_contains($clean, '@')) {
+            if (str_ends_with($clean, '@fixlap.com')) {
+                $alias = substr($clean, 0, -11) . '@fixlab.com';
+                $user = User::where('email', $alias)->first();
+            } elseif (str_ends_with($clean, '@fixlab.com')) {
+                $alias = substr($clean, 0, -11) . '@fixlap.com';
+                $user = User::where('email', $alias)->first();
+            }
+        }
+
+        return $user;
     }
 }

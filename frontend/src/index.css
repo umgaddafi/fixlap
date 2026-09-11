@@ -1316,7 +1316,7 @@
   border: 1px solid rgba(115, 226, 224, 0.18) !important;
   border-radius: 16px !important;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18) !important;
-  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease !important;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
 .landing-process .process-card:hover {
@@ -1586,5 +1586,352 @@
   margin-top: 2px !important;
 }
 
+/* ==========================================================================
+   DYNAMIC FASHIONABLE SCROLL-REVEAL ENGINE
+   Fluid, physics-based viewport cascade animations with micro-interactions
+   ========================================================================== */
 
+/* 1. Section Header Reveals */
+.scroll-reveal-header {
+  opacity: 0 !important;
+  transform: translateY(28px) !important;
+  transition: 
+    opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1), 
+    transform 0.65s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  will-change: opacity, transform;
+}
 
+.scroll-reveal-header.is-revealed {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
+
+/* 2. Generic Card Reveal */
+.scroll-reveal-card {
+  opacity: 0 !important;
+  transform: translateY(58px) scale(0.93) !important;
+  filter: blur(5px) !important;
+  transition: 
+    opacity 0.82s cubic-bezier(0.16, 1, 0.3, 1), 
+    transform 0.82s cubic-bezier(0.16, 1, 0.3, 1), 
+    filter 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.32s cubic-bezier(0.16, 1, 0.3, 1), 
+    border-color 0.32s ease !important;
+  transition-delay: calc(var(--reveal-index, 0) * 125ms) !important;
+  will-change: opacity, transform, filter;
+}
+
+.scroll-reveal-card.is-revealed {
+  opacity: 1 !important;
+  transform: translateY(0) scale(1) !important;
+  filter: blur(0) !important;
+}
+
+.scroll-reveal-card.is-revealed:hover {
+  transition-delay: 0ms !important;
+  transition-duration: 0.28s !important;
+}
+
+/* 3. Service Cards (Technology deserves better care) */
+.landing .service-card.scroll-reveal-card.is-revealed:hover {
+  transform: translateY(-8px) scale(1.018) !important;
+  box-shadow: 0 22px 45px -12px rgba(8, 165, 179, 0.24), 0 10px 24px -6px rgba(0, 0, 0, 0.1) !important;
+  border-color: rgba(115, 226, 224, 0.5) !important;
+}
+
+.landing .service-card.scroll-reveal-card img {
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), filter 0.5s ease !important;
+}
+
+.landing .service-card.scroll-reveal-card:hover img {
+  transform: scale(1.05) !important;
+  filter: saturate(1.05) !important;
+}
+
+.landing .service-card .service-icon {
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s ease, background 0.3s ease !important;
+}
+
+.landing .service-card.scroll-reveal-card:hover .service-icon {
+  transform: scale(1.14) rotate(6deg) !important;
+  box-shadow: 0 6px 16px rgba(8, 165, 179, 0.35) !important;
+}
+
+.landing .service-card button svg {
+  transition: transform 0.25s ease !important;
+}
+
+.landing .service-card.scroll-reveal-card:hover button svg {
+  transform: translateX(5px) !important;
+}
+
+/* 4. Why Kendat FixLap Cards */
+.landing .landing-why .why-grid > div.scroll-reveal-card.is-revealed:hover {
+  transform: translateY(-7px) scale(1.018) !important;
+  box-shadow: 0 20px 42px -10px rgba(8, 174, 185, 0.18), 0 8px 20px -4px rgba(18, 48, 66, 0.08) !important;
+  border-color: #8ed2dc !important;
+}
+
+.landing .landing-why .why-grid b {
+  display: inline-block !important;
+  transition: transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.3s ease !important;
+}
+
+.landing .landing-why .why-grid > div.scroll-reveal-card:hover b {
+  transform: scale(1.15) translateX(3px) !important;
+  color: #069ba5 !important;
+}
+
+.landing .landing-why .why-grid > div.scroll-reveal-card.is-revealed b {
+  animation: why-badge-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  animation-delay: calc(var(--reveal-index, 0) * 90ms + 0.1s);
+}
+
+@keyframes why-badge-pop {
+  0% { transform: scale(0.4); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Mobile-only: Alternating Bold Reveal from Right and Left */
+@media (max-width: 800px) {
+  .landing-why,
+  .landing .landing-why {
+    overflow-x: clip !important;
+  }
+
+  /* 1st, 3rd, 5th card: Show prominently from the RIGHT */
+  .landing .landing-why .why-grid > div.scroll-reveal-card:nth-child(odd) {
+    opacity: 0 !important;
+    transform: translateX(110px) scale(0.92) !important;
+    filter: blur(5px) !important;
+    transition: 
+      opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), 
+      transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), 
+      filter 0.6s ease,
+      box-shadow 0.3s ease, 
+      border-color 0.3s ease !important;
+    transition-delay: calc(var(--reveal-index, 0) * 80ms) !important;
+  }
+
+  .landing .landing-why .why-grid > div.scroll-reveal-card:nth-child(odd).is-revealed {
+    opacity: 1 !important;
+    transform: translateX(0) scale(1) !important;
+    filter: blur(0) !important;
+  }
+
+  /* 2nd, 4th card: Show prominently from the LEFT */
+  .landing .landing-why .why-grid > div.scroll-reveal-card:nth-child(even) {
+    opacity: 0 !important;
+    transform: translateX(-110px) scale(0.92) !important;
+    filter: blur(5px) !important;
+    transition: 
+      opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), 
+      transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), 
+      filter 0.6s ease,
+      box-shadow 0.3s ease, 
+      border-color 0.3s ease !important;
+    transition-delay: calc(var(--reveal-index, 0) * 80ms) !important;
+  }
+
+  .landing .landing-why .why-grid > div.scroll-reveal-card:nth-child(even).is-revealed {
+    opacity: 1 !important;
+    transform: translateX(0) scale(1) !important;
+    filter: blur(0) !important;
+  }
+
+  /* Touch / Hover on mobile once revealed */
+  .landing .landing-why .why-grid > div.scroll-reveal-card.is-revealed:hover {
+    transform: translateY(-3px) scale(1.01) !important;
+  }
+}
+
+/* 5. Process Cards (How it Works) */
+.landing-process .process-card.scroll-reveal-card {
+  opacity: 0 !important;
+  transform: translateY(58px) scale(0.93) !important;
+  filter: blur(5px) !important;
+  transition: 
+    opacity 0.82s cubic-bezier(0.16, 1, 0.3, 1), 
+    transform 0.82s cubic-bezier(0.16, 1, 0.3, 1), 
+    filter 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.32s cubic-bezier(0.16, 1, 0.3, 1), 
+    border-color 0.32s ease !important;
+  transition-delay: calc(var(--reveal-index, 0) * 125ms) !important;
+  will-change: opacity, transform, filter;
+}
+
+.landing-process .process-card.scroll-reveal-card.is-revealed {
+  opacity: 1 !important;
+  transform: translateY(0) scale(1) !important;
+  filter: blur(0) !important;
+}
+
+.landing-process .process-card.scroll-reveal-card.is-revealed:hover {
+  transform: translateY(-6px) scale(1.015) !important;
+  border-color: rgba(115, 226, 224, 0.6) !important;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.38), 0 0 26px rgba(115, 226, 224, 0.22) !important;
+  transition-delay: 0ms !important;
+  transition-duration: 0.28s !important;
+}
+
+.landing-process .process-step-badge {
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s ease, background 0.35s ease !important;
+}
+
+.landing-process .process-card.scroll-reveal-card:hover .process-step-badge {
+  transform: scale(1.14) rotate(4deg) !important;
+  box-shadow: 0 0 22px rgba(115, 226, 224, 0.55) !important;
+  background: rgba(115, 226, 224, 0.24) !important;
+}
+
+.landing-process .process-card.scroll-reveal-card.is-revealed .process-step-badge {
+  animation: process-badge-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  animation-delay: calc(var(--reveal-index, 0) * 90ms + 0.1s);
+}
+
+@keyframes process-badge-pop {
+  0% { transform: scale(0.4) rotate(-10deg); opacity: 0; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+/* Mobile-only: Alternating Bold Reveal from Right and Left for How It Works */
+@media (max-width: 800px) {
+  .landing-process,
+  .landing .landing-process {
+    overflow-x: clip !important;
+  }
+
+  /* 1st, 3rd card: Show prominently from the RIGHT */
+  .landing-process .process-card.scroll-reveal-card:nth-child(odd) {
+    opacity: 0 !important;
+    transform: translateX(110px) scale(0.92) !important;
+    filter: blur(5px) !important;
+    transition: 
+      opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), 
+      transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), 
+      filter 0.6s ease,
+      box-shadow 0.3s ease, 
+      border-color 0.3s ease !important;
+    transition-delay: calc(var(--reveal-index, 0) * 80ms) !important;
+  }
+
+  .landing-process .process-card.scroll-reveal-card:nth-child(odd).is-revealed {
+    opacity: 1 !important;
+    transform: translateX(0) scale(1) !important;
+    filter: blur(0) !important;
+  }
+
+  /* 2nd card: Show prominently from the LEFT */
+  .landing-process .process-card.scroll-reveal-card:nth-child(even) {
+    opacity: 0 !important;
+    transform: translateX(-110px) scale(0.92) !important;
+    filter: blur(5px) !important;
+    transition: 
+      opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), 
+      transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), 
+      filter 0.6s ease,
+      box-shadow 0.3s ease, 
+      border-color 0.3s ease !important;
+    transition-delay: calc(var(--reveal-index, 0) * 80ms) !important;
+  }
+
+  .landing-process .process-card.scroll-reveal-card:nth-child(even).is-revealed {
+    opacity: 1 !important;
+    transform: translateX(0) scale(1) !important;
+    filter: blur(0) !important;
+  }
+
+  /* Touch / Hover on mobile */
+  .landing-process .process-card.scroll-reveal-card.is-revealed:hover {
+    transform: translateY(-3px) scale(1.01) !important;
+  }
+}
+
+/* 6. Trust Bar Spans */
+.landing-trust span.scroll-reveal-card {
+  opacity: 0 !important;
+  transform: translateY(20px) !important;
+  transition: 
+    opacity 0.58s ease, 
+    transform 0.58s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition-delay: calc(var(--reveal-index, 0) * 85ms) !important;
+}
+
+.landing-trust span.scroll-reveal-card.is-revealed {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
+
+.landing-trust span svg {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+.landing-trust span:hover svg {
+  transform: scale(1.22) rotate(8deg) !important;
+}
+
+/* 7. FAQ Accordion Rows */
+.landing .landing-faq .faq-row.scroll-reveal-card {
+  opacity: 0 !important;
+  transform: translateY(26px) !important;
+  transition: 
+    opacity 0.68s ease, 
+    transform 0.68s cubic-bezier(0.16, 1, 0.3, 1), 
+    border-color 0.25s ease, 
+    box-shadow 0.25s ease !important;
+  transition-delay: calc(var(--reveal-index, 0) * 95ms) !important;
+}
+
+.landing .landing-faq .faq-row.scroll-reveal-card.is-revealed {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
+
+.landing .landing-faq .faq-row.scroll-reveal-card.is-revealed:hover {
+  border-color: rgba(115, 226, 224, 0.4) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* 8. Call to Action Banner */
+.landing-cta.scroll-reveal-banner {
+  opacity: 0 !important;
+  transform: translateY(32px) scale(0.97) !important;
+  transition: 
+    opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), 
+    transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), 
+    box-shadow 0.35s ease !important;
+  will-change: opacity, transform;
+}
+
+.landing-cta.scroll-reveal-banner.is-revealed {
+  opacity: 1 !important;
+  transform: translateY(0) scale(1) !important;
+}
+
+.landing-cta.scroll-reveal-banner.is-revealed:hover {
+  transform: translateY(-4px) scale(1.008) !important;
+  box-shadow: 0 22px 50px rgba(115, 226, 224, 0.22), 0 10px 25px rgba(0, 0, 0, 0.25) !important;
+}
+
+.landing-cta button {
+  transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease !important;
+}
+
+.landing-cta button:hover {
+  transform: translateY(-2px) scale(1.03) !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* 9. Accessibility: Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .scroll-reveal-card,
+  .scroll-reveal-header,
+  .scroll-reveal-banner,
+  .landing-trust span.scroll-reveal-card,
+  .landing-process .process-card.scroll-reveal-card,
+  .landing .landing-why .why-grid > div.scroll-reveal-card {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}

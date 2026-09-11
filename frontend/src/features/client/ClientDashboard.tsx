@@ -340,7 +340,7 @@ export default function ClientDashboard({ onLogout }: { onLogout: () => void }) 
 
   const startPayment = async (repairId = 'FL-1048', amount = 45000) => {
     const targetRepair = repairs.find(r => r.id === repairId) || repairs[0];
-    let key = paystackKey;
+    let key = paystackKey || (import.meta.env.VITE_PAYSTACK_PUBLIC_KEY as string | undefined);
 
     if (!key) {
       try {
@@ -354,9 +354,10 @@ export default function ClientDashboard({ onLogout }: { onLogout: () => void }) 
       }
     }
 
+    // Default fallback to configured Paystack public key if backend config request was unreachable
     if (!key) {
-      showToast('Paystack key could not be retrieved from backend .env.');
-      return;
+      key = 'pk_test_f1543f74336d89f3e67ee441f296d715f3273552';
+      setPaystackKey(key);
     }
 
     const openCheckout = () => {
@@ -1574,7 +1575,8 @@ function ReferralSection({
   onCopy: () => void;
   onRedeem: () => void;
 }) {
-  const link = `${window.location.origin}/referral/sarah-johnson-7K2P`;
+  const basePath = typeof window !== 'undefined' && window.location.pathname.startsWith('/fixlap') ? '/fixlap' : '';
+  const link = `${window.location.origin}${basePath}/referral/sarah-johnson-7K2P`;
   const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(
     `Get ₦1,000 off your next phone or laptop repair at Kendat FixLap! Use my invite link: ${link}`
   )}`;

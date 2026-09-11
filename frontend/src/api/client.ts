@@ -48,8 +48,9 @@ export function setStoredUser(user: any, remember = true) {
  * Allows multiple users, devices, and external IPs to communicate with the FixLab backend.
  * 1. Checks VITE_API_URL if explicitly configured.
  * 2. If running in a browser:
- *    - If accessed on default HTTP/HTTPS port 80/443 or unified reverse proxy, uses relative '/api'
- *    - Otherwise (such as Vite dev server on port 5173), dynamically targets `${protocol}//${hostname}` on default port 80
+ *    - In Vite development mode (e.g. port 5173): uses relative '/api' which Vite proxies without CORS issues.
+ *    - When accessed under Apache subfolder (e.g. http://localhost/fixlap/): uses '/fixlap'.
+ *    - In production root / cPanel: uses relative '/api'.
  */
 export function getApiBaseUrl(): string {
   const envUrl = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
@@ -59,14 +60,19 @@ export function getApiBaseUrl(): string {
   }
 
   if (typeof window !== 'undefined' && window.location) {
-    const { protocol, hostname, port } = window.location;
-    // When served on default HTTP/HTTPS ports or behind unified reverse proxy
-    if (!port || port === '80' || port === '443') {
+    const { pathname, port } = window.location;
+
+    // Vite dev server or dev mode: relative '/api' uses Vite's proxy, working seamlessly across LAN devices
+    if (port === '5173' || port === '5174' || port === '4173' || (import.meta as any).env?.DEV) {
       return '';
     }
-    // Dynamic IP detection: use current browser hostname on default backend port 80
-    // This allows devices on LAN (e.g. 192.168.1.190), custom IPs, or domains to access the API cross-origin
-    return `${protocol}//${hostname}`;
+
+    // Direct local Apache subfolder on LAN or localhost (e.g. http://192.168.1.190/fixlap/ or http://localhost/fixlap/)
+    if (pathname.startsWith('/fixlap')) {
+      return '/fixlap';
+    }
+
+    return '';
   }
 
   return '';

@@ -17,6 +17,7 @@ cleanup() {
         echo "🔄 Restoring local .env files..."
         rm -f backend/.env
         mv backend/.env.local_backup backend/.env
+        git update-index --assume-unchanged backend/.env 2>/dev/null || true
     fi
 }
 trap cleanup EXIT
@@ -78,6 +79,7 @@ fi
 # 5. Stage changes
 echo ""
 echo "📝 Staging changes for git..."
+git update-index --no-assume-unchanged backend/.env 2>/dev/null || true
 git add index.html assets/ images/ favicon* apple-touch-icon* .htaccess *.sql || true
 git add .
 
