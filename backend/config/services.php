@@ -42,7 +42,7 @@ return [
     ],
 
     'kudisms' => [
-        'api_key' => env('KUDISMS_API_KEY', ''),
+        'api_key' => env('KUDISMS_API_KEY'),
         'sender_id' => env('KUDISMS_SENDER_ID', 'Kendat FixLap'),
         'fallback_sender_id' => env('KUDISMS_FALLBACK_SENDER_ID', 'SNADKITCHEN'),
         'endpoint' => env('KUDISMS_ENDPOINT', 'https://my.kudisms.net/api/sms'),

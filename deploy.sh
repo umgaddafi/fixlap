@@ -47,14 +47,14 @@ echo ""
 echo "📂 Copying frontend build files to root..."
 cp -r frontend/dist/* .
 
-# 4. Stage changes (Secrets / .env files are strictly excluded)
+# 4. Stage changes (Secrets / .env / .sql files are strictly excluded)
 echo ""
 echo "📝 Staging changes for git..."
-git add index.html assets/ images/ favicon* apple-touch-icon* .htaccess *.sql || true
+git add index.html assets/ images/ favicon* apple-touch-icon* .htaccess || true
 git add .
 
-# Strict security safeguard: Never stage or commit any .env file
-git reset HEAD backend/.env* .env* *.local_backup 2>/dev/null || true
+# Strict security safeguard: Never stage or commit any .env or .sql file
+git reset HEAD backend/.env* .env* *.local_backup *.sql *.sql.gz *.dump 2>/dev/null || true
 
 # Force add backend/vendor if it exists for cPanel hosts lacking composer CLI
 if [ -d backend/vendor ]; then

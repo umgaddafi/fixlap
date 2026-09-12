@@ -15,6 +15,11 @@ frontend/.env.*
 !frontend/.env.example
 *.local_backup
 
+# Database Dumps (Never commit DB backups with user data or token hashes)
+*.sql
+*.sql.gz
+*.dump
+
 # Backend
 backend/vendor/
 backend/storage/*.key
